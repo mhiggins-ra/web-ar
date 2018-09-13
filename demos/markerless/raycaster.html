@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Web AR markerless example</title>
+    <script src="https://aframe.io/releases/0.7.0/aframe.min.js"></script>
+
+    <script src="https://rawgit.com/google-ar/three.ar.js/master/dist/three.ar.js"></script>
+
+    <!-- aframe.ar.js for markerless ar-->
+    <script src="https://rawgit.com/chenzlabs/aframe-ar/master/dist/aframe-ar.min.js"></script>
+
+  </head>
+
+  <body>
+    <a-scene ar>
+      <!-- display a ring to use as the raycaster intersection indicator. -->
+      <a-ring id="mark" color="teal" radius-inner="0.02" radius-outer="0.03" position="0 -3 -3" rotation="-90 0 0"></a-ring>
+
+      <a-camera ar-raycaster raycaster="showLine: true;" cursor="fuse:false"></a-camera>
+    </a-scene>
+
+    <script>
+      const raycaster = document.querySelector("[ar-raycaster]");
+      const mark = document.querySelector("#mark");
+
+      raycaster.addEventListener('raycaster-intersection', function (evt) {
+        // Move the mark to the intersection point
+        mark.setAttribute('position', evt.detail.intersections[0].point);
+      });
+    </script>
+  </body>
+</html>

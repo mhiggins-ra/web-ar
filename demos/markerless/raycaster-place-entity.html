@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Web AR markerless example</title>
+    <script src="https://aframe.io/releases/0.7.0/aframe.min.js"></script>
+
+    <script src="https://rawgit.com/google-ar/three.ar.js/master/dist/three.ar.js"></script>
+
+    <!-- aframe.ar.js for markerless ar-->
+    <script src="https://rawgit.com/chenzlabs/aframe-ar/master/dist/aframe-ar.min.js"></script>
+
+  </head>
+
+  <body>
+    <div style="position: fixed; top: 2px; width:30px; text-align: center; z-index: 1;">
+      <button onclick="toggleInfo()">Info</button>
+    </div>
+    <div id="infoBox"
+         style="position: fixed;
+                top: 2px;
+                width:100%;
+                text-align: center;
+                z-index: 2;
+                display: none;
+                background-color: #e6e6e6;">
+      Tap the screen to place circles on any recognized surface around the scene.<br />The circles will be placed based on the surface detector
+      <div>
+        <button class="close-info"
+                style="margin: 10px;"
+                onclick="toggleInfo()">
+          Close
+        </button>
+      </div>
+    </div>
+    <a-scene ar>
+      <!-- display a ring to use as the raycaster intersection indicator. -->
+      <a-ring id="mark" color="teal" radius-inner="0.02" radius-outer="0.03" position="0 -3 -3" rotation="-90 0 0"></a-ring>
+
+      <a-camera ar-raycaster raycaster="showLine: true;" cursor="fuse:false"></a-camera>
+    </a-scene>
+
+    <script>
+      const raycaster = document.querySelector("[ar-raycaster]");
+      const mark = document.querySelector("#mark");
+
+      function onSceneLoaded() {
+        mark.setAttribute('position', raycaster.getAttribute("position"));
+
+        raycaster.addEventListener('raycaster-intersection', (event) => {
+          mark.setAttribute('position', event.detail.intersections[0].point);
+        });
+
+        raycaster.addEventListener('click', () => {
+          const target = raycaster.components.cursor.intersection.point;
+
+          const circle = document.createElement("a-circle");
+          circle.setAttribute("position", target);
+          circle.setAttribute("color", "green");
+          circle.setAttribute("radius", "0.02");
+
+          document.querySelector("a-scene").appendChild(circle);
+        });
+      }
+
+      function toggleInfo() {
+        const infoBox = document.querySelector('#infoBox');
+
+        if(infoBox.style.display !== "none") {
+          infoBox.style.display = "none";
+        }
+        else {
+          infoBox.style.display = "";
+        }
+      }
+
+      const scene = document.querySelector('a-scene');
+      scene.addEventListener('loaded', onSceneLoaded);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Web AR Experiment</title>
+    <script src="https://aframe.io/releases/0.8.2/aframe.min.js"></script>
+
+    <script src="https://rawgit.com/google-ar/three.ar.js/master/dist/three.ar.js"></script>
+
+    <!-- aframe.ar.js for markerless ar-->
+    <script src="https://rawgit.com/chenzlabs/aframe-ar/master/dist/aframe-ar.min.js"></script>
+
+    <script src="https://cdn.rawgit.com/donmccurdy/aframe-extras/cfe5f316/dist/aframe-extras.js"></script>
+
+    <script src="https://unpkg.com/aframe-animation-component@^4.1.2/dist/aframe-animation-component.min.js"></script>
+
+    <script src="https://unpkg.com/aframe-look-at-component@0.5.1/dist/aframe-look-at-component.min.js"></script>
+
+  </head>
+
+  <body>
+    <div id="loadingIndicator"
+         style="position: fixed; top: 100px; height: 100px; width:100%; text-align: center; z-index: 2; background-color:#e6e6e6; padding-top: 40px">
+      Loading Model...
+    </div>
+    <div style="position: fixed; top: 10px; width:100%; text-align: center; z-index: 1;">
+       <div>  
+         <button onclick="run('away')">
+           Run Away
+        </button>
+        <button onclick="run('towards')">
+            Come Back
+         </button>
+       </div>
+    </div>
+    <a-scene ar>
+      <a-assets>
+        <a-asset-item id="characterAsset" src="../resources/models/runner/scene.gltf"></a-asset-item>
+      </a-assets>
+      
+      <a-entity id="characterContainer"
+                position="0 -4 -4"
+                rotation="0 180 0"
+                animation__position="property: position; startEvents: moveCharacter">
+        <a-entity gltf-model="#characterAsset"
+                  id="characterModel"
+                  scale="0.02 0.02 0.02">
+        </a-entity>
+      </a-entity>
+      <a-camera position="0 1.6 0"></a-camera>
+    </a-scene>
+
+    <script>
+      const characterModel = document.querySelector("#characterModel");
+      const characterContainer = document.querySelector("#characterContainer");
+      const characterAsset = document.querySelector("#characterAsset");
+      const { stringify } = AFRAME.utils.coordinates;
+
+      characterModel.addEventListener("model-loaded", function(e) {
+        setTimeout(function() {
+          document.querySelector("#loadingIndicator").style.display = 'none';
+        }, 1000);
+      });
+
+      characterAsset.addEventListener("progress", function(e) {
+        document.querySelector("#loadingIndicator").innerHTML = "Loading...<br />" + e.detail.loadedBytes + " of " + e.detail.totalBytes + " bytes loaded";
+      });
+
+      function onSceneLoaded() {
+        
+        // Fired when characterContainer begins an animation
+        characterContainer.addEventListener('animationbegin', function(e) {
+          characterContainer.removeAttribute("look-at");
+
+          // If event was 'animation__position' he looks at the point he is running to and starts the animation
+          if(e.detail.name === "animation__position") {
+            characterModel.setAttribute("animation-mixer", "");
+            const animateTo = e.target.getAttribute(e.detail.name).to.split(" ");
+            characterContainer.setAttribute("look-at", stringify({ x: animateTo[0], y: animateTo[1], z: animateTo[2]}));
+          }
+        });
+
+        // Fired when characterContainer finishes an animation
+        characterContainer.addEventListener('animationcomplete', function(e) {
+          characterContainer.removeAttribute("look-at");
+
+          // If event was 'animation__position' he looks at the camera and stops the animation
+          if(e.detail.name === "animation__position") {
+            characterContainer.setAttribute("look-at", "a-camera");
+            characterModel.removeAttribute("animation-mixer");
+          }
+        });
+      }
+
+      function run(direction) {
+        const currentPosition = characterContainer.object3D.position;
+        const newPosition = getNewPosition(currentPosition, direction);
+        const distance = currentPosition.distanceTo(newPosition);
+
+        characterContainer.setAttribute("animation__position", {from: stringify(characterContainer.getAttribute('position')), to: stringify(newPosition), easing: 'linear', dur: distance * 500});
+        characterContainer.emit("moveCharacter");
+      }
+
+      function getNewPosition(currentPosition, direction) {
+        switch (direction) {
+          case "towards":
+            return {x: currentPosition.x, y: currentPosition.y, z: -5};
+          case "away":
+            return {x: currentPosition.x, y: currentPosition.y, z: currentPosition.z - 50};
+          default:
+            return currentPosition;
+        }
+      }
+
+      const scene = document.querySelector('a-scene');
+      scene.addEventListener('loaded', onSceneLoaded);
+    </script>
+  </body>
+</html>
